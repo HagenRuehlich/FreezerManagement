@@ -71,14 +71,13 @@ Function getCellValueByUserSelection(sCurrentFileWithPath As Variant, bAutomated
     Dim sExtention As String
     Dim sSourcFileNameWithExtention As String
     Dim sSourcSheetName As String
-    Dim sSourcCellString1 As String
-    Dim sSourcCellString2 As String
-    Dim sSourcCellString3 As String
-    Dim sSourcCellString4 As String
+    Dim sSourcCellStrings(3) As String
     Dim sReturnFormula As String
     Dim objFso As Object
     Dim oVarUserInput As Range
     Dim bCellSelected As Boolean
+    Dim iNumberOfSelectedCells As Integer
+    Dim iCounter As Integer
     '----------------------
     getCellValueByUserSelection = ""
     Set objFso = CreateObject("Scripting.FileSystemObject")
@@ -88,31 +87,49 @@ Function getCellValueByUserSelection(sCurrentFileWithPath As Variant, bAutomated
     sExtention = objFso.GetExtensionName(sCurrentFileWithPath)
     sSourcFileNameWithExtention = sFileName + "." + sExtention
     sSourcSheetName = ActiveWorkbook.ActiveSheet.Name
+    bCellSelected = selectCells(csPromptSelectStartSourceCell, oVarUserInput)
+    If bCellSelected = False Then
+        Exit Function
+    End If
+    'in manual mode, at leat 4 cells need to be selected...
+    If bAutomatedCellSelection = False Then
+        iNumberOfSelectedCells = oVarUserInput.Areas.Count
+        If iNumberOfSelectedCells < 4 Then
+            i = MsgBox(prompt:="Please select 4 cells at least", Buttons:=vbOKOnly)
+            Exit Function
+        End If
+    End If
+    sSourcCellStrings(0) = getFormalaPositionStringFromRange(oVarUserInput)
     If bAutomatedCellSelection Then
-        bCellSelected = selectSingleCell(csPromptSelectStartSourceCell, oVarUserInput)
-        If bCellSelected = False Then
-            Exit Function
-        End If
-        sSourcCellString1 = "$" + Chr(oVarUserInput.Column + 64)
-        sSourcCellString1 = sSourcCellString1 + CStr(oVarUserInput.Row)
-        sSourcCellString2 = getIncreasColumCellIndex(sSourcCellString1)
-        sSourcCellString3 = getIncreasColumCellIndex(sSourcCellString2)
-        sSourcCellString4 = getIncreasColumCellIndex(sSourcCellString3)
+        sSourcCellStrings(1) = getIncreasColumCellIndex(sSourcCellStrings(0))
+        sSourcCellStrings(2) = getIncreasColumCellIndex(sSourcCellStrings(1))
+        sSourcCellStrings(3) = getIncreasColumCellIndex(sSourcCellStrings(2))
     Else
-        bCellSelected = selectFoursCells(csPromptSelectStartSourceCell, oVarUserInput)
-        If bCellSelected = False Then
-            Exit Function
-        End If
+        iNumberOfSelectedCells = oVarUserInput.Areas.Count
+        For iCounter = 2 To 4
+            If iCounter > (iNumberOfSelectedCells) Then
+                sSourcCellStrings(iCounter - 1) = ""
+            Else
+                sSourcCellStrings(iCounter - 1) = getFormalaPositionStringFromRange(oVarUserInput.Areas.Item(iCounter))
+            End If
+        Next
     End If
     
     sReturnFormula = Replace(csBasicFormula, "§§§SourceFilePath", sSourceFilePath)
     sReturnFormula = Replace(sReturnFormula, "§§§SourcFileNameWithExtention", sSourcFileNameWithExtention)
     sReturnFormula = Replace(sReturnFormula, "§§§SourcSheetName", sSourcSheetName)
-    sReturnFormula = Replace(sReturnFormula, "$§§§SourcCellString1", sSourcCellString1)
-    sReturnFormula = Replace(sReturnFormula, "$§§§SourcCellString2", sSourcCellString2)
-    sReturnFormula = Replace(sReturnFormula, "$§§§SourcCellString3", sSourcCellString3)
-    sReturnFormula = Replace(sReturnFormula, "$§§§SourcCellString4", sSourcCellString4)
+    sReturnFormula = Replace(sReturnFormula, "$§§§SourcCellString1", sSourcCellStrings(0))
+    sReturnFormula = Replace(sReturnFormula, "$§§§SourcCellString2", sSourcCellStrings(1))
+    sReturnFormula = Replace(sReturnFormula, "$§§§SourcCellString3", sSourcCellStrings(2))
+    sReturnFormula = Replace(sReturnFormula, "$§§§SourcCellString4", sSourcCellStrings(3))
     getCellValueByUserSelection = sReturnFormula
+End Function
+Function getFormalaPositionStringFromRange(poRange As Range) As String
+    Dim sHelpString As String
+    '-------------------------
+    getFormalaPositionStringFromRange = ""
+    sHelpString = "$" + Chr(poRange.Column + 64)
+    getFormalaPositionStringFromRange = sHelpString + CStr(poRange.Row)
 End Function
 Sub FormatCell(psCell As String)
     Range(psCell).Select

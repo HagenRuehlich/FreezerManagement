@@ -9,18 +9,14 @@ Public Function openFile(psPrompt As String) As Variant
     vPrompt = psPrompt
     openFile = Application.GetOpenFilename(, , vPrompt)
 End Function
-Public Function selectSingleCell(psPrompt As String, poReturnRange As Range) As Boolean
-    selectSingleCell = True
+Public Function selectCells(psPrompt As String, poReturnRange As Range) As Boolean
+    selectCells = True
     On Error GoTo ErrorHandler
         Set poReturnRange = Application.InputBox(psPrompt, Type:=8)
     Exit Function
    
 ErrorHandler:
-    selectSingleCell = False
-End Function
-Public Function selectFoursCells(psPrompt As String, poReturnRange As Range) As Boolean
-    'just a place holder at the moment
-    selectFoursCells = False
+    selectCells = False
 End Function
 Public Function getIntegerExcelColumn(pStringValue As String) As Integer
     Dim iReturnValue As Integer
